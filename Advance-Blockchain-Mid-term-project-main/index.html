@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CryptoZombies Dashboard</title>
+    <link rel="icon" href="favicon.ico" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.2.7-rc.0/web3.min.js"></script>
+
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: rgba(15, 23, 42, 0.85);
+        --accent: #2563eb;
+        --accent-soft: rgba(37, 99, 235, 0.14);
+        --text-primary: #e2e8f0;
+        --text-secondary: #cbd5f5;
+        --border: rgba(148, 163, 184, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        color: var(--text-primary);
+        background: radial-gradient(circle at top, #1e3a8a, #020617 55%);
+      }
+
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 48px 24px 96px;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 32px;
+        position: relative;
+      }
+
+      header h1 {
+        margin: 0 0 8px;
+        font-size: 2.5rem;
+        letter-spacing: 0.02em;
+      }
+
+      header p {
+        margin: 0;
+        color: var(--text-secondary);
+      }
+
+      .menu-button {
+        position: absolute;
+        top: 0;
+        right: 0;
+        border-radius: 50%;
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid var(--border);
+        color: #f8fafc;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      .menu-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.45);
+      }
+
+      section {
+        margin-bottom: 32px;
+      }
+
+      .panel {
+        padding: 20px 24px;
+        border-radius: 18px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        box-shadow: 0 24px 45px rgba(8, 22, 48, 0.45);
+      }
+
+      .panel h2 {
+        margin: 0 0 16px;
+        font-size: 1.4rem;
+        color: #bfdbfe;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 20px;
+      }
+
+      .control-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+      }
+
+      input,
+      button {
+        font-family: inherit;
+        font-size: 0.95rem;
+      }
+
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(15, 23, 42, 0.6);
+        color: var(--text-primary);
+        transition: border 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: rgba(59, 130, 246, 0.8);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+      }
+
+      button {
+        padding: 10px 16px;
+        margin-top: 8px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(135deg, #2563eb, #3b82f6);
+        box-shadow: 0 14px 28px rgba(37, 99, 235, 0.35);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      button:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 40px rgba(59, 130, 246, 0.4);
+      }
+
+      #statusMessage {
+        margin-top: 0;
+        border-radius: 14px;
+        padding: 14px 18px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.08);
+        transition: border 0.2s ease, background 0.2s ease, color 0.2s ease;
+      }
+
+      #statusMessage.status--info {
+        border-color: rgba(148, 163, 184, 0.22);
+        color: #e2e8f0;
+      }
+
+      #statusMessage.status--success {
+        border-color: rgba(52, 211, 153, 0.45);
+        background: rgba(6, 78, 59, 0.22);
+        color: #bbf7d0;
+      }
+
+      #statusMessage.status--error {
+        border-color: rgba(248, 113, 113, 0.55);
+        background: rgba(127, 29, 29, 0.3);
+        color: #fecaca;
+      }
+
+      #zombieGallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 22px;
+        margin-top: 24px;
+      }
+
+      .zombie-card {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(15, 23, 42, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        box-shadow: 0 24px 45px rgba(8, 22, 48, 0.5);
+      }
+
+      .zombie-portrait {
+        width: 120px;
+        height: 120px;
+        border-radius: 20px;
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+        box-shadow: 0 18px 32px rgba(15, 23, 42, 0.7);
+      }
+
+      .zombie-overlay {
+        position: absolute;
+        inset: 0;
+        mix-blend-mode: screen;
+        pointer-events: none;
+      }
+
+      .zombie-eyes {
+        position: absolute;
+        top: 42%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        justify-content: space-between;
+        width: 68%;
+        height: 26%;
+        color: var(--iris-color, #f472b6);
+      }
+
+      .zombie-eye {
+        width: 36%;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 0 12px currentColor;
+        position: relative;
+      }
+
+      .zombie-eye::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 42%;
+        height: 42%;
+        border-radius: 50%;
+        background: var(--iris-color, #f472b6);
+        box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.78);
+      }
+
+      .zombie-mouth {
+        position: absolute;
+        bottom: 18%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 54%;
+        height: 16%;
+        background: rgba(4, 7, 15, 0.58);
+        border-radius: 0 0 30% 30%;
+      }
+
+      .zombie-mouth.mouth-1 {
+        height: 22%;
+        border-radius: 50%;
+        background: rgba(4, 7, 15, 0.72);
+      }
+
+      .zombie-mouth.mouth-2 {
+        clip-path: polygon(0 82%, 12% 40%, 24% 82%, 38% 40%, 52% 82%, 68% 38%, 84% 82%, 100% 38%, 100% 100%, 0 100%);
+        background: rgba(4, 7, 15, 0.68);
+      }
+
+      .zombie-accessory {
+        position: absolute;
+        top: 12%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 74%;
+        height: 18%;
+        border-radius: 999px;
+        border: 3px solid currentColor;
+        background: rgba(15, 23, 42, 0.18);
+        color: #facc15;
+      }
+
+      .zombie-accessory.accessory-2 {
+        height: 32%;
+        border-radius: 50%;
+        border-width: 4px;
+        background: rgba(15, 23, 42, 0.22);
+      }
+
+      .zombie-accessory.accessory-3 {
+        height: 22%;
+        border: none;
+        background: currentColor;
+        opacity: 0.5;
+        clip-path: polygon(0 0, 100% 0, 78% 100%, 22% 100%);
+      }
+
+      .zombie-details h3 {
+        margin: 0 0 10px;
+        font-size: 1.15rem;
+        color: #fef3c7;
+      }
+
+      .zombie-details ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 0.92rem;
+        line-height: 1.5;
+        color: var(--text-secondary);
+      }
+
+      .zombie-details ul li strong {
+        color: #bfdbfe;
+        display: inline-block;
+        min-width: 88px;
+        font-weight: 600;
+      }
+
+      .empty-state {
+        padding: 32px;
+        text-align: center;
+        color: rgba(226, 232, 240, 0.8);
+        border-radius: 16px;
+        border: 1px dashed rgba(148, 163, 184, 0.35);
+        background: rgba(15, 23, 42, 0.55);
+      }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.78);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      .modal-backdrop.is-visible {
+        display: flex;
+      }
+
+      .modal-content {
+        max-width: 520px;
+        width: 90%;
+        background: rgba(15, 23, 42, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 20px;
+        padding: 28px 30px;
+        box-shadow: 0 28px 60px rgba(8, 22, 48, 0.6);
+        position: relative;
+      }
+
+      .modal-content h3 {
+        margin: 0 0 18px;
+        font-size: 1.5rem;
+        color: #bfdbfe;
+      }
+
+      .modal-content ol {
+        margin: 0;
+        padding-left: 20px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+
+      .modal-close {
+        position: absolute;
+        top: 14px;
+        right: 18px;
+        border: none;
+        background: transparent;
+        color: #f8fafc;
+        font-size: 1.3rem;
+        cursor: pointer;
+      }
+
+      @media (max-width: 768px) {
+        main {
+          padding: 36px 20px 72px;
+        }
+
+        .controls {
+          grid-template-columns: 1fr;
+        }
+
+        .zombie-card {
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+        }
+
+        .zombie-details ul li strong {
+          min-width: auto;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <header>
+        <h1>CryptoZombies Control Center</h1>
+        <p class="subtitle">Deploy, level up, transfer, and customise your undead army.</p>
+        <button id="rulesToggle" class="menu-button" aria-label="View rules">&#9776;</button>
+      </header>
+
+      <section class="panel">
+        <h2>Status</h2>
+        <p id="statusMessage" class="status--info">Connecting to MetaMask...</p>
+      </section>
+
+      <section class="panel">
+        <div class="section-header">
+          <h2>Your Zombies</h2>
+          <button id="showZombiesBtn" style="margin-top: 0">Refresh List</button>
+        </div>
+        <div id="zombieGallery" class="zombie-gallery empty-state">
+          No zombies yet. Use the controls below to create your first minion.
+        </div>
+      </section>
+
+      <section class="controls">
+        <article class="panel">
+          <h2>Create Zombie</h2>
+          <div class="control-group">
+            <label for="zombieNameInput">Zombie Name</label>
+            <input id="zombieNameInput" type="text" placeholder="e.g. Night Walker" />
+          </div>
+          <button id="createZombieBtn">Create Zombie</button>
+          <p class="hint">Each account can create exactly one starter zombie.</p>
+        </article>
+
+        <article class="panel">
+          <h2>Level Up</h2>
+          <p class="hint">Requires 0.001 ETH. Applies to your first zombie by default.</p>
+          <button id="levelUpBtn">Level Up</button>
+        </article>
+
+        <article class="panel">
+          <h2>Feed on Kitty</h2>
+          <p class="hint">Use your zombie to feed on a kitty and create new DNA traits.</p>
+          <button id="feedKittyBtn">Feed on Kitty</button>
+        </article>
+
+        <article class="panel">
+          <h2>Battle Arena</h2>
+          <div class="control-group">
+            <label for="attackZombieId">Your Zombie ID</label>
+            <input id="attackZombieId" type="number" min="0" placeholder="Attacker zombie ID" />
+          </div>
+          <div class="control-group">
+            <label for="attackTargetId">Target Zombie ID</label>
+            <input id="attackTargetId" type="number" min="0" placeholder="Target zombie ID" />
+          </div>
+          <button id="attackBtn">Attack</button>
+          <p class="hint">You must own the attacker. Cooldowns apply after each battle.</p>
+        </article>
+
+        <article class="panel">
+          <h2>Transfer Ownership</h2>
+          <div class="control-group">
+            <label for="transferZombieId">Zombie ID</label>
+            <input id="transferZombieId" type="number" min="0" placeholder="Zombie ID" />
+          </div>
+          <div class="control-group">
+            <label for="transferToAddress">Recipient Address</label>
+            <input id="transferToAddress" type="text" placeholder="0x..." />
+          </div>
+          <button id="transferBtn">Transfer Zombie</button>
+        </article>
+
+        <article class="panel">
+          <h2>Customise Zombie</h2>
+          <div class="control-group">
+            <label for="renameZombieId">Zombie ID</label>
+            <input id="renameZombieId" type="number" min="0" placeholder="Zombie ID" />
+          </div>
+          <div class="control-group">
+            <label for="renameZombieName">New Name (level >= 2)</label>
+            <input id="renameZombieName" type="text" placeholder="New name" />
+          </div>
+          <button id="renameBtn">Change Name</button>
+          <hr style="border: none; border-top: 1px solid rgba(148, 163, 184, 0.18); margin: 18px 0" />
+          <div class="control-group">
+            <label for="changeDnaZombieId">Zombie ID</label>
+            <input id="changeDnaZombieId" type="number" min="0" placeholder="Zombie ID" />
+          </div>
+          <div class="control-group">
+            <label for="changeDnaValue">New DNA (level >= 20)</label>
+            <input id="changeDnaValue" type="text" placeholder="16-digit DNA" />
+          </div>
+          <button id="changeDnaBtn">Change DNA</button>
+        </article>
+      </section>
+    </main>
+
+    <div id="rulesModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+      <div class="modal-content">
+        <button id="rulesClose" class="modal-close" aria-label="Close rules">&times;</button>
+        <h3 id="rulesTitle">Zombie Horde Rules</h3>
+        <ol>
+          <li>Each account may create exactly one starter zombie via "Create Zombie".</li>
+          <li>Leveling up costs 0.001 ETH and applies to your first zombie.</li>
+          <li>Renaming requires level 2, DNA changes require level 20.</li>
+          <li>You must own a zombie to rename, change DNA, attack, or transfer it.</li>
+          <li>Transfers move ownership immediately to the recipient address.</li>
+          <li>Attacking another zombie updates wins/losses; cooldowns still apply afterward.</li>
+          <li>Refresh the gallery after transactions to see the latest stats.</li>
+        </ol>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        "use strict";
+
+        // Global state shared across handlers.
+        const state = {
+          account: null,
+          contract: null,
+          artifact: null,
+          transferSubscription: null,
+          txLocks: {
+            create: false,
+            level: false,
+            transfer: false,
+            rename: false,
+            dna: false,
+            attack: false,
+          },
+        };
+
+        // DOM references.
+        const dom = {
+          status: document.getElementById("statusMessage"),
+          zombies: document.getElementById("zombieGallery"),
+          createBtn: document.getElementById("createZombieBtn"),
+          levelBtn: document.getElementById("levelUpBtn"),
+          transferBtn: document.getElementById("transferBtn"),
+          renameBtn: document.getElementById("renameBtn"),
+          dnaBtn: document.getElementById("changeDnaBtn"),
+          attackBtn: document.getElementById("attackBtn"),
+          showBtn: document.getElementById("showZombiesBtn"),
+          nameInput: document.getElementById("zombieNameInput"),
+          transferId: document.getElementById("transferZombieId"),
+          transferAddress: document.getElementById("transferToAddress"),
+          renameId: document.getElementById("renameZombieId"),
+          renameName: document.getElementById("renameZombieName"),
+          dnaId: document.getElementById("changeDnaZombieId"),
+          dnaValue: document.getElementById("changeDnaValue"),
+          attackId: document.getElementById("attackZombieId"),
+          attackTarget: document.getElementById("attackTargetId"),
+          rulesToggle: document.getElementById("rulesToggle"),
+          rulesModal: document.getElementById("rulesModal"),
+          rulesClose: document.getElementById("rulesClose"),
+        };
+
+        // Map each transaction lock to its corresponding button for easy toggling.
+        const buttonMap = {
+          create: dom.createBtn,
+          level: dom.levelBtn,
+          transfer: dom.transferBtn,
+          rename: dom.renameBtn,
+          dna: dom.dnaBtn,
+          attack: dom.attackBtn,
+        };
+
+        const STATUS_CLASSES = ["status--info", "status--success", "status--error"];
+        const setStatus = (message, tone = "info") => {
+          dom.status.textContent = message;
+          dom.status.classList.remove(...STATUS_CLASSES);
+          dom.status.classList.add(`status--${tone}`);
+        };
+
+        const openRules = () => {
+          if (dom.rulesModal) {
+            dom.rulesModal.classList.add("is-visible");
+          }
+        };
+
+        const closeRules = () => {
+          if (dom.rulesModal) {
+            dom.rulesModal.classList.remove("is-visible");
+          }
+        };
+
+        const ensureContractReady = () => {
+          if (!state.contract) {
+            setStatus("Contract not ready yet. Please try again in a moment.", "error");
+            return false;
+          }
+          if (!state.account) {
+            setStatus("No account selected in MetaMask.", "error");
+            return false;
+          }
+          return true;
+        };
+
+        const normalizeAddress = (address) => {
+          if (!address || typeof address !== "string") return null;
+          try {
+            if (window.web3 && window.web3.utils && window.web3.utils.toChecksumAddress) {
+              return window.web3.utils.toChecksumAddress(address);
+            }
+          } catch (_err) {
+            // Fall back to lowercase below.
+          }
+          return address.toLowerCase();
+        };
+
+        const addressesEqual = (left, right) => {
+          const a = normalizeAddress(left);
+          const b = normalizeAddress(right);
+          if (!a || !b) return false;
+          return a === b || a.toLowerCase() === b.toLowerCase();
+        };
+
+        const formatAddress = (address) => {
+          const normalized = normalizeAddress(address);
+          if (!normalized) return "N/A";
+          if (normalized.length <= 10) return normalized;
+          return `${normalized.slice(0, 6)}...${normalized.slice(-4)}`;
+        };
+
+        async function loadArtifact() {
+          if (state.artifact) return state.artifact;
+          const response = await fetch("build/contracts/CryptoZombies.json");
+          if (!response.ok) {
+            throw new Error("Artifact build/contracts/CryptoZombies.json not found. Run `truffle migrate` first.");
+          }
+          state.artifact = await response.json();
+          return state.artifact;
+        }
+
+        // 🧩 --- Manual fallback for Ganache deployment ---
+        const GANACHE_NETWORK_ID = 1337;
+        const MANUAL_DEPLOY_ADDRESS = "0x3F4b79966cc909355057e780E85eb18C9Ce65015"; // replace if redeployed
+        // -------------------------------------------------
+
+
+        // Fetch the deployed contract address from Truffle's artifact and instantiate Web3 contract.
+        async function instantiateContract() {
+          const artifact = await loadArtifact();
+          const networkId = await web3.eth.net.getId();
+          let contractAddress;
+
+          // ✅ Try to load from the artifact first
+          if (artifact.networks[networkId]) {
+            contractAddress = artifact.networks[networkId].address;
+          } 
+          // ✅ If no match, use the manual fallback for Ganache
+          else if (networkId === GANACHE_NETWORK_ID) {
+            contractAddress = MANUAL_DEPLOY_ADDRESS;
+          } 
+          // ❌ Otherwise, show the deployment error
+          else {
+            throw new Error(
+              `CryptoZombies is not deployed to network id ${networkId}. ` +
+              "Run `truffle migrate --network development` while connected to Ganache."
+            );
+          }
+
+          // ✅ Instantiate the Web3 contract with the ABI + correct address
+          state.contract = new web3.eth.Contract(artifact.abi, contractAddress);
+          await subscribeToTransfers();
+
+          setStatus(
+            `Connected to contract at ${contractAddress}. Active account: ${state.account}`,
+            "success"
+          );
+        }
+
+
+        async function subscribeToTransfers() {
+          if (!state.contract) return;
+          if (state.transferSubscription && state.transferSubscription.unsubscribe) {
+            try {
+              await state.transferSubscription.unsubscribe();
+            } catch (err) {
+              console.warn("Failed to unsubscribe from Transfer events", err);
+            }
+          }
+          state.transferSubscription = state.contract.events
+            .Transfer({ filter: { _to: state.account } })
+            .on("data", () => refreshZombies().catch(console.error))
+            .on("error", console.error);
+        }
+
+        // Human-readable display for the ready time timestamp.
+        function formatReadyTime(value) {
+          const ready = Number(value);
+          if (!ready) return "Ready";
+          const date = new Date(ready * 1000);
+          return date.toLocaleString();
+        }
+
+        // Optional accessory overlay based on the DNA fingerprint.
+        function renderAccessoryMarkup(visuals) {
+          if (visuals.accessoryVariant === 0) return "";
+          return `<div class="zombie-accessory accessory-${visuals.accessoryVariant}" style="color:${visuals.accessoryColor};"></div>`;
+        }
+
+        // Deterministically derive colours and accessory variants from DNA.
+        function getVisualProfile(dna) {
+          const dnaStr = (dna || "0").toString().padStart(16, "0");
+          const baseHue = (parseInt(dnaStr.slice(0, 2), 10) * 3) % 360;
+          const accentHue = (parseInt(dnaStr.slice(2, 4), 10) * 3) % 360;
+          const eyeHue = (parseInt(dnaStr.slice(4, 6), 10) * 3) % 360;
+          const mouthVariant = parseInt(dnaStr.slice(6, 8), 10) % 3;
+          const accessoryVariant = parseInt(dnaStr.slice(8, 10), 10) % 4;
+          const overlayVariant = parseInt(dnaStr.slice(10, 12), 10) % 3;
+
+          const overlays = [
+            "radial-gradient(circle at 70% 18%, rgba(255,255,255,0.2), transparent 60%)",
+            "radial-gradient(circle at 28% 80%, rgba(255,255,255,0.22), transparent 58%)",
+            "linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 60%)",
+          ];
+
+          return {
+            background: `radial-gradient(circle at 30% 28%, hsl(${baseHue}, 72%, 62%) 0%, hsl(${(baseHue + 48) % 360}, 70%, 45%) 52%, hsl(${(baseHue + 96) % 360}, 66%, 30%) 100%)`,
+            overlay: overlays[overlayVariant],
+            eyeColor: `hsl(${eyeHue}, 88%, 70%)`,
+            mouthVariant,
+            accessoryVariant,
+            accessoryColor: `hsl(${accentHue}, 85%, 65%)`,
+          };
+        }
+
+        // Fetch the current account's zombies and re-render the gallery.
+        async function refreshZombies() {
+          if (!ensureContractReady()) return;
+          const ids = await state.contract.methods.getZombiesByOwner(state.account).call();
+          if (!ids || !ids.length) {
+            dom.zombies.classList.add("empty-state");
+            dom.zombies.innerHTML =
+              '<div class="empty-state">No zombies yet. Create one to populate your horde.</div>';
+            return;
+          }
+
+          const cardMarkup = await Promise.all(
+            ids.map(async (id) => {
+              const zombie = await state.contract.methods.zombies(id).call();
+              const ownerAddress = await state.contract.methods.zombieToOwner(id).call();
+              const visuals = getVisualProfile(zombie.dna);
+              const accessory = renderAccessoryMarkup(visuals);
+
+              return `
+                <article class="zombie-card">
+                  <div class="zombie-portrait" style="background:${visuals.background};">
+                    <div class="zombie-overlay" style="background:${visuals.overlay};"></div>
+                    <div class="zombie-eyes" style="--iris-color:${visuals.eyeColor}; color:${visuals.eyeColor};">
+                      <div class="zombie-eye"></div>
+                      <div class="zombie-eye"></div>
+                    </div>
+                    <div class="zombie-mouth mouth-${visuals.mouthVariant}"></div>
+                    ${accessory}
+                  </div>
+                  <div class="zombie-details">
+                    <h3>Zombie #${id}</h3>
+                    <ul>
+                      <li><strong>Name:</strong> ${zombie.name}</li>
+                      <li><strong>DNA:</strong> ${zombie.dna}</li>
+                      <li><strong>Level:</strong> ${zombie.level}</li>
+                      <li><strong>Wins:</strong> ${zombie.winCount}</li>
+                      <li><strong>Losses:</strong> ${zombie.lossCount}</li>
+                      <li><strong>Owner:</strong> ${formatAddress(ownerAddress)}</li>
+                      <li><strong>Ready:</strong> ${formatReadyTime(zombie.readyTime)}</li>
+                    </ul>
+                  </div>
+                </article>
+              `;
+            })
+          );
+
+          dom.zombies.classList.remove("empty-state");
+          dom.zombies.innerHTML = cardMarkup.join("");
+        }
+
+        // Guard against duplicate submissions while a transaction is pending.
+        async function runWithLock(lockKey, task, pendingMessage) {
+          if (state.txLocks[lockKey]) return;
+          if (!ensureContractReady()) return;
+
+          state.txLocks[lockKey] = true;
+          const button = buttonMap[lockKey];
+          if (button) button.disabled = true;
+          if (pendingMessage) setStatus(pendingMessage, "info");
+
+          try {
+            await task();
+          } catch (err) {
+            console.error(err);
+            setStatus(err?.message || "Transaction failed. Check console for details.", "error");
+          } finally {
+            state.txLocks[lockKey] = false;
+            if (button) button.disabled = false;
+          }
+        }
+
+        async function handleCreateZombie() {
+          await runWithLock("create", async () => {
+            const owned = await state.contract.methods.getZombiesByOwner(state.account).call();
+            if (owned.length) {
+              const existing = await state.contract.methods.zombies(owned[0]).call();
+              setStatus(`You already created "${existing.name}". Level up or customise it instead.`, "info");
+              return;
+            }
+
+            const name = dom.nameInput.value.trim() || `Zombie ${Date.now()}`;
+            await state.contract.methods.createRandomZombie(name).send({ from: state.account });
+            setStatus(`Successfully created ${name}.`, "success");
+            dom.nameInput.value = "";
+            await refreshZombies();
+          }, "Submitting create transaction...");
+        }
+
+        async function handleLevelUp() {
+          await runWithLock("level", async () => {
+            const ids = await state.contract.methods.getZombiesByOwner(state.account).call();
+            if (!ids.length) {
+              setStatus("You do not own any zombies yet.", "error");
+              return;
+            }
+            await state.contract.methods
+              .levelUp(ids[0])
+              .send({ from: state.account, value: web3.utils.toWei("0.001", "ether") });
+            setStatus(`Leveled up zombie #${ids[0]}.`, "success");
+            await refreshZombies();
+          }, "Submitting level up transaction...");
+        }
+
+        async function handleFeedKitty() {
+          await runWithLock("dna", async () => {
+            const ids = await state.contract.methods.getZombiesByOwner(state.account).call();
+            if (!ids.length) {
+              setStatus("You do not own any zombies yet.", "error");
+              return;
+            }
+
+            const zombieId = ids[0]; 
+            const kittyId = 1; 
+            await state.contract.methods.feedOnKitty(zombieId, kittyId).send({ from: state.account });
+
+            setStatus(`Zombie #${zombieId} fed on Kitty #${kittyId}!`, "success");
+            await refreshZombies();
+          }, "Feeding zombie on kitty...");
+        }
+
+
+        async function handleAttack() {
+          await runWithLock("attack", async () => {
+            const attackerRaw = dom.attackId.value.trim();
+            const targetRaw = dom.attackTarget.value.trim();
+
+            if (!attackerRaw || !targetRaw) {
+              setStatus("Enter both an attacker and a target zombie ID.", "error");
+              return;
+            }
+
+            const attackerId = parseInt(attackerRaw, 10);
+            const targetId = parseInt(targetRaw, 10);
+            if (Number.isNaN(attackerId) || attackerId < 0 || Number.isNaN(targetId) || targetId < 0) {
+              setStatus("Zombie IDs must be positive numbers.", "error");
+              return;
+            }
+            if (attackerId === targetId) {
+              setStatus("Choose a different target zombie.", "error");
+              return;
+            }
+
+            const attackerOwner = await state.contract.methods.zombieToOwner(attackerId).call();
+            if (!addressesEqual(attackerOwner, state.account)) {
+              setStatus("You do not own the attacking zombie.", "error");
+              return;
+            }
+
+            const attacker = await state.contract.methods.zombies(attackerId).call();
+            const readyTime = parseInt(attacker.readyTime, 10);
+            if (!Number.isNaN(readyTime) && readyTime > Math.floor(Date.now() / 1000)) {
+              const readyDate = new Date(readyTime * 1000).toLocaleString();
+              setStatus(`Zombie #${attackerId} is cooling down until ${readyDate}.`, "error");
+              return;
+            }
+
+            try {
+              await state.contract.methods.zombies(targetId).call();
+            } catch (_err) {
+              setStatus("Target zombie does not exist.", "error");
+              return;
+            }
+
+            await state.contract.methods.attack(attackerId, targetId).send({ from: state.account });
+            setStatus(`Zombie #${attackerId} attacked zombie #${targetId}!`, "success");
+            dom.attackId.value = "";
+            dom.attackTarget.value = "";
+            await refreshZombies();
+          }, "Submitting attack transaction...");
+        }
+
+        async function handleTransfer() {
+          await runWithLock("transfer", async () => {
+            const zombieId = dom.transferId.value.trim();
+            const recipient = dom.transferAddress.value.trim();
+
+            if (!zombieId || !recipient) {
+              setStatus("Enter both a zombie ID and a recipient address.", "error");
+              return;
+            }
+
+            await state.contract.methods
+              .transferFrom(state.account, recipient, zombieId)
+              .send({ from: state.account });
+            setStatus(`Transferred zombie #${zombieId} to ${recipient}.`, "success");
+            dom.transferId.value = "";
+            dom.transferAddress.value = "";
+            await refreshZombies();
+          }, "Submitting transfer transaction...");
+        }
+
+        async function handleRename() {
+          await runWithLock("rename", async () => {
+            const zombieId = dom.renameId.value.trim();
+            const newName = dom.renameName.value.trim();
+
+            if (!zombieId || !newName) {
+              setStatus("Enter a zombie ID and the new name.", "error");
+              return;
+            }
+
+            const owner = await state.contract.methods.zombieToOwner(zombieId).call();
+            if (!addressesEqual(owner, state.account)) {
+              setStatus("You do not own this zombie.", "error");
+              return;
+            }
+
+            const zombie = await state.contract.methods.zombies(zombieId).call();
+            const level = parseInt(zombie.level, 10);
+            if (Number.isNaN(level)) {
+              setStatus("Unable to read zombie data. Refresh and try again.", "error");
+              return;
+            }
+            if (level < 2) {
+              setStatus(`Level 2 required to rename. Current level: ${level}.`, "error");
+              return;
+            }
+
+            await state.contract.methods.changeName(zombieId, newName).send({ from: state.account });
+            setStatus(`Zombie #${zombieId} renamed to ${newName}.`, "success");
+            dom.renameId.value = "";
+            dom.renameName.value = "";
+            await refreshZombies();
+          }, "Submitting rename transaction...");
+        }
+
+        async function handleDnaChange() {
+          await runWithLock("dna", async () => {
+            const zombieId = dom.dnaId.value.trim();
+            const newDna = dom.dnaValue.value.trim();
+
+            if (!zombieId || !newDna) {
+              setStatus("Enter a zombie ID and new DNA.", "error");
+              return;
+            }
+
+            if (!/^\d+$/.test(newDna)) {
+              setStatus("DNA must be numeric.", "error");
+              return;
+            }
+
+            const owner = await state.contract.methods.zombieToOwner(zombieId).call();
+            if (!addressesEqual(owner, state.account)) {
+              setStatus("You do not own this zombie.", "error");
+              return;
+            }
+
+            const zombie = await state.contract.methods.zombies(zombieId).call();
+            const level = parseInt(zombie.level, 10);
+            if (Number.isNaN(level)) {
+              setStatus("Unable to read zombie data. Refresh and try again.", "error");
+              return;
+            }
+            if (level < 20) {
+              setStatus(`Level 20 required to modify DNA. Current level: ${level}.`, "error");
+              return;
+            }
+
+            await state.contract.methods.changeDna(zombieId, newDna).send({ from: state.account });
+            setStatus(`Zombie #${zombieId} DNA updated.`, "success");
+            dom.dnaId.value = "";
+            dom.dnaValue.value = "";
+            await refreshZombies();
+          }, "Submitting DNA update...");
+        }
+
+        function bindEventListeners() {
+          dom.createBtn.addEventListener("click", handleCreateZombie);
+          dom.levelBtn.addEventListener("click", handleLevelUp);
+          document.getElementById("feedKittyBtn").addEventListener("click", handleFeedKitty);
+          dom.attackBtn?.addEventListener("click", handleAttack);
+          dom.transferBtn.addEventListener("click", handleTransfer);
+          dom.renameBtn.addEventListener("click", handleRename);
+          dom.dnaBtn.addEventListener("click", handleDnaChange);
+          dom.showBtn.addEventListener("click", refreshZombies);
+          dom.rulesToggle?.addEventListener("click", openRules);
+          dom.rulesClose?.addEventListener("click", closeRules);
+          dom.rulesModal?.addEventListener("click", (event) => {
+            if (event.target === dom.rulesModal) {
+              closeRules();
+            }
+          });
+          window.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && dom.rulesModal?.classList.contains("is-visible")) {
+              closeRules();
+            }
+          });
+
+          if (window.ethereum) {
+            window.ethereum.on("accountsChanged", async (accounts) => {
+              state.account = accounts[0] || null;
+              if (!state.account) {
+                setStatus("No account selected. Connect a wallet to continue.", "error");
+                dom.zombies.innerHTML =
+                  '<div class="empty-state">Connect a wallet to view your zombies.</div>';
+                dom.zombies.classList.add("empty-state");
+                return;
+              }
+              setStatus(`Switched to account ${state.account}.`, "info");
+              await subscribeToTransfers();
+              await refreshZombies();
+            });
+
+            window.ethereum.on("chainChanged", () => {
+              window.location.reload();
+            });
+          }
+        }
+
+        async function connectWallet() {
+          if (window.ethereum) {
+            window.web3 = new Web3(window.ethereum);
+            const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+            state.account = accounts[0];
+            await instantiateContract();
+            await refreshZombies();
+          } else if (window.web3) {
+            window.web3 = new Web3(window.web3.currentProvider);
+            state.account = (await web3.eth.getAccounts())[0];
+            await instantiateContract();
+            await refreshZombies();
+          } else {
+            setStatus("MetaMask (or another Ethereum wallet) is required to use this DApp.", "error");
+          }
+        }
+
+        window.addEventListener("load", async () => {
+          try {
+            bindEventListeners();
+            await connectWallet();
+          } catch (err) {
+            console.error(err);
+            setStatus(err?.message || "Unable to initialise the DApp.", "error");
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
