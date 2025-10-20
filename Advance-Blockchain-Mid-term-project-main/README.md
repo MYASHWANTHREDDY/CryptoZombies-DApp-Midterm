@@ -29,20 +29,23 @@ Tools and Versions Used:
 
 -------------------------------------------------------
 How to Run the Project:
-1. Start Ganache on port 7545 with chain ID 1337.
+1. Download the code from the following GitHub link and access it in VS Code
+   GitHub link : https://github.com/MYASHWANTHREDDY/CryptoZombies-DApp-Midterm
+   
+2. Start Ganache on port 7545 with chain ID 1337.
    Command: npx ganache --port 7545 --chain.chainId 1337 --chain.networkId 1337
 
-2. In a new terminal, compile and deploy contracts:
+3. In a new terminal, compile and deploy contracts:
    truffle compile
    truffle migrate --reset --network development
 
-3. Run the frontend:
+4. Run the frontend:
    npx http-server -p 8080
 
-4. Open the app in your browser:
+5. Open the app in your browser:
    http://127.0.0.1:8080
 
-5. Connect MetaMask to the local Ganache network and import an account.
+6. Connect MetaMask to the local Ganache network and import an account.
 
 -------------------------------------------------------
 Improvements Made:
