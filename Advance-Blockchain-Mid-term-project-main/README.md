@@ -30,7 +30,7 @@ Tools and Versions Used:
 -------------------------------------------------------
 How to Run the Project:
 1. Download the code from the following GitHub link and access it in VS Code
-   GitHub link : https://github.com/MYASHWANTHREDDY/CryptoZombies-DApp-Midterm
+   GitHub link: https://github.com/MYASHWANTHREDDY/CryptoZombies-DApp-Midterm
    
 2. Start Ganache on port 7545 with chain ID 1337.
    Command: npx ganache --port 7545 --chain.chainId 1337 --chain.networkId 1337
@@ -50,25 +50,18 @@ How to Run the Project:
 -------------------------------------------------------
 Improvements Made:
 The following improvements go beyond the provided starter package and enhance functionality and usability.
-1. Added feed on kitty function using a local KittyMock contract.
+1. Redesigned the frontend with a modern responsive UI.
 2. Implemented zombie battle system with wins/losses and cooldowns.
-3. Enabled rename and DNA change features with level restrictions.
+3. Enabled DNA change features with level restrictions.
 4. Added transfer ownership function between different accounts.
-5. Redesigned the frontend with a modern responsive UI.
+5. Enabled rename
 6. Added dynamic zombie visuals based on DNA.
+7. Created a hamburger icon with game rules.
 
 -------------------------------------------------------
 Testing Steps:
-- Create a zombie and confirm transaction in MetaMask.
+- Create a zombie and confirm the transaction in MetaMask.
 - Level up the zombie (0.001 ETH fee).
-- Feed on Kitty to create new zombies.
 - Attack another zombie and check stats.
 - Transfer ownership between accounts.
-
--------------------------------------------------------
-Troubleshooting:
-If the message “CryptoZombies is not deployed to network id 1” appears, re-run:
-   truffle migrate --reset --network development
-
-Also make sure MetaMask, Ganache, and truffle-config.js all use the same network ID (1337).
 
