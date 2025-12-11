@@ -1,15 +1,4 @@
 CryptoZombies DApp - Midterm Project
-California State University, Fullerton
-CPSC 559-01, Fall 2025
-Instructor: Wenlin Han
-
--------------------------------------------------------
-Team Members:
-1. Yashwanth Reddy Mallareddygari - CWID: 809595069 - Email: yashwanthr@csu.fullerton.edu
-2. Abrarullah Mohammed - CWID: 840411276 - Email: abrarullahm@csu.fullerton.edu
-3. Abhishek Namala - CWID: 825328420 - Email: Abhisheknamala@csu.fullerton.edu
-4. Prateek Gurram - CWID: 862976321 - Email: gurramprateek@csu.fullerton.edu
-5. Nayeem Sufyaan Abdul - CWID: 842789430 - Email: sufyaan@csu.fullerton.edu
 
 -------------------------------------------------------
 Project Overview:
